@@ -1,6 +1,5 @@
 """
 CAMADA 2 — Interpretação via Claude API + envio por email
-Recebe os números brutos da Camada 1 e gera o briefing com semáforos.
 """
 
 import os
@@ -14,39 +13,47 @@ import anthropic
 
 load_dotenv()
 
-def gerar_briefing(dados: dict) -> str:
+def gerar_briefing(dados: dict, comparacoes: dict) -> str:
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-    prompt = f"""Você é um assistente especialista em fisiologia do exercício e medicina de precisão.
+    prompt = f"""Você é um especialista em fisiologia do exercício e medicina de precisão.
 
-Receberá dados objetivos do Garmin de hoje e deve gerar um briefing diário curto, direto e prático.
+Gere um briefing diário com base nos dados objetivos do Garmin e nas comparações históricas.
+
+ESTRUTURA OBRIGATÓRIA (máximo 300 palavras):
+
+1. RECUPERAÇÃO [semaforo] — HRV + sono + body battery
+2. CARGA [semaforo] — ACWR + estresse  
+3. PERFORMANCE [semaforo] — VO2max
+4. TENDENCIAS — compare hoje vs 7d, 30d, 180d e 365d. Destaque apenas o que mudou de forma relevante (delta > 5%).
+5. ACAO DO DIA — uma frase objetiva e específica
+
+SEMAFOROS: 🔴 ruim | 🟡 moderado | 🟢 ótimo
 
 REGRAS:
-- Use semáforos: 🔴 (ruim/atenção), 🟡 (moderado/cautela), 🟢 (ótimo)
-- Máximo 200 palavras no total
-- Estrutura obrigatória:
-  1. RECUPERAÇÃO 🔴🟡🟢 — HRV + sono + body battery (1-2 linhas)
-  2. CARGA 🔴🟡🟢 — ACWR + estresse (1-2 linhas)
-  3. PERFORMANCE 🔴🟡🟢 — VO2máx + previsão de prova (1-2 linhas)
-  4. AÇÃO DO DIA — uma frase objetiva com a recomendação principal
-- Linguagem técnica mas leve, sem rodeios
-- Se um dado estiver ausente (None), ignore-o silenciosamente
+- Linguagem técnica mas direta
+- Se dado ausente (None), ignore silenciosamente
+- Nas tendências, use setas: ↑ melhora, ↓ piora, → estável
+- Só mencione períodos com dados suficientes (n >= 5)
 
 DADOS DE HOJE ({dados['data']}):
 {json.dumps(dados, indent=2, ensure_ascii=False)}
 
-REFERÊNCIAS:
-- HRV noturno saudável adulto ativo: > 50ms
-- Sono total ideal: >= 420 min (7h)
+COMPARACOES HISTORICAS:
+{json.dumps(comparacoes, indent=2, ensure_ascii=False)}
+
+REFERENCIAS:
+- HRV noturno saudável: > 50ms
+- Sono ideal: >= 420 min
 - Sleep score ideal: >= 80
-- Body battery ideal ao acordar: >= 70
-- ACWR zona ótima: 0.8 a 1.3 (< 0.8 = subtreino, > 1.5 = risco)
-- VO2máx excelente homem 40-49 anos: > 46 ml/kg/min
+- Body battery ao acordar: >= 70
+- ACWR zona ótima: 0.8-1.3
+- VO2max excelente (40-49 anos): > 46 ml/kg/min
 """
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=500,
+        max_tokens=600,
         messages=[{"role": "user", "content": prompt}]
     )
 
@@ -63,34 +70,10 @@ def enviar_email(assunto: str, corpo: str):
     msg["From"] = remetente
     msg["To"] = destinatario
 
-    parte_texto = MIMEText(corpo, "plain", "utf-8")
-    msg.attach(parte_texto)
+    msg.attach(MIMEText(corpo, "plain", "utf-8"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(remetente, senha_app)
         server.sendmail(remetente, destinatario, msg.as_string())
 
     print(f"Email enviado para {destinatario}")
-
-
-if __name__ == "__main__":
-    from coletar_dados import coletar
-
-    print("Coletando dados do Garmin...")
-    dados = coletar()
-
-    if dados.get("erros"):
-        print(f"Avisos: {dados['erros']}")
-
-    print("Gerando interpretacao...")
-    briefing = gerar_briefing(dados)
-
-    print("\n" + "="*50)
-    print(briefing)
-    print("="*50 + "\n")
-
-    hoje = date.today().strftime("%d/%m/%Y")
-    assunto = f"Briefing Garmin — {hoje}"
-
-    print("Enviando email...")
-    enviar_email(assunto, briefing)

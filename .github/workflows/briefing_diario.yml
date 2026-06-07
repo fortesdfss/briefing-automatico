@@ -11,13 +11,18 @@ env:
 jobs:
   briefing:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Instalar dependencias
         run: pip install garminconnect anthropic python-dotenv requests
+
       - name: Criar env
         run: |
           echo "GARMIN_EMAIL=${{ secrets.GARMIN_EMAIL }}" >> .env
@@ -26,5 +31,14 @@ jobs:
           echo "EMAIL_REMETENTE=${{ secrets.EMAIL_REMETENTE }}" >> .env
           echo "EMAIL_SENHA_APP=${{ secrets.EMAIL_SENHA_APP }}" >> .env
           echo "EMAIL_DESTINATARIO=${{ secrets.EMAIL_DESTINATARIO }}" >> .env
+
       - name: Rodar briefing
         run: python connectors/garmin/main.py
+
+      - name: Salvar historico no repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add historico/
+          git diff --staged --quiet || git commit -m "data: historico $(date +%Y-%m-%d)"
+          git push

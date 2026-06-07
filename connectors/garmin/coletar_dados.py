@@ -1,7 +1,5 @@
 """
 CAMADA 1 — Coleta e cálculo determinístico
-Baixa dados do Garmin Connect e retorna um dicionário com números brutos.
-Nenhuma inferência ou interpretação aqui — só fatos.
 """
 
 import os
@@ -21,7 +19,6 @@ def conectar_garmin():
     senha = os.getenv("GARMIN_PASSWORD")
 
     time.sleep(random.uniform(1.5, 3.5))
-
     client = garminconnect.Garmin(email, senha)
 
     try:
