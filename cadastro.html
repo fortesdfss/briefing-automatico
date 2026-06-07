@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diego Salgueiro, PhD — Briefing Fisiológico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Helvetica+Neue:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --tinta: #1a1915;
+      --texto: #33312e;
+      --suave: #7a756e;
+      --linha: #e4e0d9;
+      --fundo: #f4f2ed;
+      --papel: #fffefb;
+      --verde: #1f8a4c;
+      --erro: #cf3030;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--fundo);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    /* Grain texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .card {
+      background: var(--papel);
+      border: 1px solid var(--linha);
+      width: 100%;
+      max-width: 520px;
+      padding: 0;
+      animation: fadeUp 0.6s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cabeçalho */
+    .header {
+      padding: 40px 44px 28px;
+      border-bottom: 2px solid var(--tinta);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .nome {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--tinta);
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    .nome span {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--suave);
+      margin-left: 4px;
+    }
+
+    .subtitulo {
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--suave);
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    /* Corpo do formulário */
+    .body {
+      padding: 36px 44px 40px;
+    }
+
+    .intro {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--tinta);
+      font-style: italic;
+      margin-bottom: 32px;
+      padding-left: 18px;
+      border-left: 2px solid var(--tinta);
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--suave);
+      font-weight: 600;
+      margin-bottom: 20px;
+      margin-top: 28px;
+    }
+
+    .section-label:first-of-type { margin-top: 0; }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      color: var(--suave);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: 'Helvetica Neue', Helvetica, sans-serif;
+      font-size: 15px;
+      color: var(--tinta);
+      background: var(--fundo);
+      border: 1px solid var(--linha);
+      border-radius: 0;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .field input:focus {
+      border-color: var(--tinta);
+      background: var(--papel);
+    }
+
+    .field input.erro {
+      border-color: var(--erro);
+    }
+
+    .field-hint {
+      font-size: 12px;
+      color: var(--suave);
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    .divisor {
+      height: 1px;
+      background: var(--linha);
+      margin: 28px 0;
+    }
+
+    .aviso-seguranca {
+      background: var(--fundo);
+      border: 1px solid var(--linha);
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .aviso-seguranca .icone {
+      font-size: 16px;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .aviso-seguranca p {
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--suave);
+    }
+
+    .consent-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+
+    .consent-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      margin-top: 2px;
+      accent-color: var(--tinta);
+      cursor: pointer;
+    }
+
+    .consent-row label {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--texto);
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--tinta);
+      color: var(--papel);
+      border: none;
+      font-family: 'Helvetica Neue', Helvetica, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      position: relative;
+    }
+
+    .btn-submit:hover { background: #2d2c27; }
+    .btn-submit:active { transform: scale(0.99); }
+    .btn-submit:disabled { background: var(--suave); cursor: not-allowed; }
+
+    .btn-submit .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+    /* Estados */
+    .msg-erro {
+      display: none;
+      font-size: 12px;
+      color: var(--erro);
+      margin-top: 6px;
+    }
+
+    .estado-sucesso {
+      display: none;
+      text-align: center;
+      padding: 48px 44px;
+    }
+
+    .estado-sucesso .check {
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+
+    .estado-sucesso h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--tinta);
+      margin-bottom: 12px;
+    }
+
+    .estado-sucesso p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--suave);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+    }
+
+    .rodape {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--suave);
+      text-align: center;
+      font-style: italic;
+    }
+
+    @media (max-width: 560px) {
+      .header, .body { padding-left: 28px; padding-right: 28px; }
+      .estado-sucesso { padding: 40px 28px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+
+    <!-- Cabeçalho -->
+    <div class="header">
+      <div class="header-row">
+        <div class="nome">Diego Salgueiro<span>, PhD</span></div>
+      </div>
+      <div class="subtitulo">Briefing Fisiológico Diário</div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="body" id="form-body">
+      <p class="intro">Preencha seus dados uma única vez. Todo dia você receberá uma análise fisiológica personalizada com base nas suas métricas do Garmin.</p>
+
+      <div class="section-label">Seus dados</div>
+
+      <div class="field">
+        <label for="nome">Nome completo</label>
+        <input type="text" id="nome" placeholder="Como você prefere ser chamado" autocomplete="name">
+        <div class="msg-erro" id="erro-nome">Por favor, informe seu nome.</div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email para receber o briefing</label>
+        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+        <div class="msg-erro" id="erro-email">Por favor, informe um email válido.</div>
+      </div>
+
+      <div class="divisor"></div>
+
+      <div class="section-label">Acesso ao Garmin Connect</div>
+
+      <div class="aviso-seguranca">
+        <div class="icone">🔒</div>
+        <p>Suas credenciais são armazenadas de forma criptografada e utilizadas exclusivamente para coletar suas métricas de saúde e gerar seu briefing diário. Nenhuma alteração é feita na sua conta.</p>
+      </div>
+
+      <div class="field">
+        <label for="garmin-email">Email do Garmin Connect</label>
+        <input type="email" id="garmin-email" placeholder="email@garmin.com" autocomplete="off">
+        <div class="msg-erro" id="erro-garmin-email">Por favor, informe o email do Garmin.</div>
+      </div>
+
+      <div class="field">
+        <label for="garmin-senha">Senha do Garmin Connect</label>
+        <input type="password" id="garmin-senha" placeholder="••••••••" autocomplete="off">
+        <div class="msg-erro" id="erro-garmin-senha">Por favor, informe a senha do Garmin.</div>
+      </div>
+
+      <div class="divisor"></div>
+
+      <div class="consent-row">
+        <input type="checkbox" id="consentimento">
+        <label for="consentimento">
+          Autorizo Diego Salgueiro, PhD a coletar e processar minhas métricas de saúde do Garmin Connect para fins de acompanhamento fisiológico personalizado, conforme a Lei Geral de Proteção de Dados (LGPD).
+        </label>
+      </div>
+
+      <button class="btn-submit" id="btn-enviar" onclick="enviar()">
+        Iniciar meu briefing
+        <span class="spinner" id="spinner"></span>
+      </button>
+
+      <div class="msg-erro" id="erro-geral" style="margin-top:12px;display:none;"></div>
+    </div>
+
+    <!-- Estado de sucesso -->
+    <div class="estado-sucesso" id="sucesso">
+      <div class="check">✦</div>
+      <h2>Tudo pronto.</h2>
+      <p>A partir de amanhã às 9h você começará a receber seu briefing fisiológico diário no email informado.</p>
+    </div>
+
+  </div>
+
+  <div class="rodape">As inferências são hipóteses calibradas, não diagnósticos.</div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://oluslefpinoknbboemwz.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_sdrsu5K0PJ0aU6CIpRWIcQ_DYF7lsqj';
+  const EDGE_FUNCTION_URL = 'https://oluslefpinoknbboemwz.supabase.co/functions/v1/cadastrar-atleta';
+
+  function mostrarErro(id, mostrar) {
+    document.getElementById(id).style.display = mostrar ? 'block' : 'none';
+  }
+
+  function validar() {
+    let ok = true;
+    const nome = document.getElementById('nome').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const gEmail = document.getElementById('garmin-email').value.trim();
+    const gSenha = document.getElementById('garmin-senha').value;
+    const consent = document.getElementById('consentimento').checked;
+
+    mostrarErro('erro-nome', !nome);
+    mostrarErro('erro-email', !email || !email.includes('@'));
+    mostrarErro('erro-garmin-email', !gEmail || !gEmail.includes('@'));
+    mostrarErro('erro-garmin-senha', !gSenha);
+
+    if (!nome || !email || !email.includes('@') || !gEmail || !gSenha) ok = false;
+    if (!consent) {
+      document.getElementById('erro-geral').textContent = 'É necessário aceitar os termos para continuar.';
+      document.getElementById('erro-geral').style.display = 'block';
+      ok = false;
+    } else {
+      document.getElementById('erro-geral').style.display = 'none';
+    }
+    return ok;
+  }
+
+  async function enviar() {
+    if (!validar()) return;
+
+    const btn = document.getElementById('btn-enviar');
+    const spinner = document.getElementById('spinner');
+    btn.disabled = true;
+    spinner.style.display = 'block';
+
+    const payload = {
+      nome: document.getElementById('nome').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      garmin_email: document.getElementById('garmin-email').value.trim(),
+      garmin_password: document.getElementById('garmin-senha').value,
+    };
+
+    try {
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok || res.status === 201) {
+        document.getElementById('form-body').style.display = 'none';
+        document.getElementById('sucesso').style.display = 'block';
+      } else {
+        const msg = data.error === 'Email já cadastrado'
+          ? 'Este email já está cadastrado.'
+          : 'Erro ao cadastrar. Tente novamente.';
+        document.getElementById('erro-geral').textContent = msg;
+        document.getElementById('erro-geral').style.display = 'block';
+        btn.disabled = false;
+        spinner.style.display = 'none';
+      }
+    } catch (e) {
+      document.getElementById('erro-geral').textContent = 'Erro de conexão. Verifique sua internet.';
+      document.getElementById('erro-geral').style.display = 'block';
+      btn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  }
+
+  // Enter submete
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') enviar();
+  });
+</script>
+</body>
+</html>
