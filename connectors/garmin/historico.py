@@ -46,7 +46,9 @@ def media_metrica(registros: list[dict], campo: str) -> float | None:
 def comparar(hoje: dict) -> dict:
     """Gera comparações com 7d, 30d, 180d e 365d anteriores."""
     data_hoje = date.fromisoformat(hoje["data"])
-    metricas = ["hrv_noturno", "sono_total_min", "body_battery_max", "acwr", "vo2max"]
+    metricas = ["hrv_rmssd_noturno", "hrv_media_7d", "hrv_desvio_baseline_pct",
+                "readiness_score", "stress_medio", "fc_repouso",
+                "sono_total_min", "sono_score", "body_battery_max", "acwr", "vo2max"]
 
     comparacoes = {}
     periodos = {"7d": 7, "30d": 30, "180d": 180, "365d": 365}

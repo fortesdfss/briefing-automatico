@@ -1,62 +1,100 @@
 """
-CAMADA 2 — Interpretação via Claude API + envio por email
+CAMADA 2 — O Fisiologista
+Recebe dados brutos + sinais detectados + modelo carga-resposta + intenções inferidas
++ base de conhecimento, e produz DIREÇÃO, não descrição.
 """
 
 import os
 import json
+import glob
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from pathlib import Path
 from datetime import date
 from dotenv import load_dotenv
 import anthropic
 
 load_dotenv()
 
-def gerar_briefing(dados: dict, comparacoes: dict) -> str:
+CONHECIMENTO_DIR = Path(__file__).parent / "conhecimento"
+
+
+def carregar_conhecimento() -> str:
+    blocos = []
+    for caminho in sorted(glob.glob(str(CONHECIMENTO_DIR / "*.md"))):
+        with open(caminho, encoding="utf-8") as f:
+            blocos.append(f.read())
+    return "\n\n---\n\n".join(blocos)
+
+
+def gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr) -> str:
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    conhecimento = carregar_conhecimento()
 
-    prompt = f"""Você é um especialista em fisiologia do exercício e medicina de precisão.
+    system = f"""Você é o fisiologista do exercício pessoal deste atleta. Não é um app que lista números — o Garmin já faz isso. Seu valor é INTERPRETAÇÃO E DIREÇÃO: olhar o conjunto ao longo do tempo, entender a intenção de cada sessão, e dizer o que fazer hoje e por quê.
 
-Gere um briefing diário com base nos dados objetivos do Garmin e nas comparações históricas.
+=== BASE DE CONHECIMENTO CIENTÍFICA ===
+{conhecimento}
+=== FIM DA BASE ===
 
-ESTRUTURA OBRIGATÓRIA (máximo 300 palavras):
+FILOSOFIA (inviolável):
+- Você dá DIREÇÃO, não descrição. O atleta tem os números. Ele quer significado e decisão.
+- CONTEXTO sobre número isolado. Bateria baixa após treino duro é o plano funcionando — não é alerta. Bateria baixa após dia leve é o sinal. Você sabe a diferença porque recebe a INTENÇÃO inferida de cada sessão e o MODELO carga-resposta individual.
+- Confiança CALIBRADA. Nas primeiras semanas o modelo individual ainda está aprendendo (o campo modelo_carga_resposta dirá isso). Seja honesto: "ainda estou conhecendo seu padrão" é melhor que falsa precisão. Conforme o N cresce, fique mais assertivo.
+- Raciocínio causal HONESTO. Nomeie a hipótese mais provável, dê o grau de confiança, diga que dado a confirmaria. NUNCA invente precisão fisiológica que os dados não suportam (não afirme depleção de glicogênio sem marcador — diga "padrão compatível com X, hipótese"). O valor está em raciocinar bem sob incerteza.
+- Os SINAIS já vêm pré-detectados deterministicamente (motor de padrões). Você os INTERPRETA e conecta — não precisa recalcular, confie neles.
+- FC na natação é usada normalmente.
+- Multiesporte: cada modalidade tem leitura própria (ver base). Considere interferência concorrente.
 
-1. RECUPERAÇÃO [semaforo] — HRV + sono + body battery
-2. CARGA [semaforo] — ACWR + estresse  
-3. PERFORMANCE [semaforo] — VO2max
-4. TENDENCIAS — compare hoje vs 7d, 30d, 180d e 365d. Destaque apenas o que mudou de forma relevante (delta > 5%).
-5. ACAO DO DIA — uma frase objetiva e específica
+TOM: fisiologista experiente falando com um atleta que é cientista. Técnico, direto, sem motivacional vazio, sem floreio. Cada frase carrega informação ou decisão."""
 
-SEMAFOROS: 🔴 ruim | 🟡 moderado | 🟢 ótimo
+    # Formato adaptativo: curto por padrão, profundo quando há mudança relevante
+    houve_mudanca = sinais.get("houve_mudanca_relevante") or modelo_cr.get("anomalia")
+    modo = "PROFUNDO" if houve_mudanca else "CIRÚRGICO"
 
-REGRAS:
-- Linguagem técnica mas direta
-- Se dado ausente (None), ignore silenciosamente
-- Nas tendências, use setas: ↑ melhora, ↓ piora, → estável
-- Só mencione períodos com dados suficientes (n >= 5)
+    instrucao_formato = """MODO CIRÚRGICO (dia normal, sem mudanças relevantes): seja breve e direto. Máximo ~180 palavras.
+- Uma leitura rápida do estado (1-2 frases integrando recuperação/prontidão).
+- Comentário do(s) treino(s) de hoje vs intenção inferida (1-2 frases por sessão, só o que importa).
+- AÇÃO DO DIA: uma decisão clara e justificada.
+Não encha de números que ele já viu no Garmin. Vá ao significado.""" if modo == "CIRÚRGICO" else """MODO PROFUNDO (algo mudou — sinal de severidade alta ou anomalia carga-resposta): análise completa. Até ~450 palavras.
+- Abra pelo que mudou e por que importa (o insight principal).
+- RECUPERAÇÃO E PRONTIDÃO: integre HRV (rMSSD vs HRV7 vs baseline, desvio %, status), Readiness e seus fatores, Stress Index, sono, FCrep — por CONVERGÊNCIA, conectando aos sinais detectados.
+- CARGA E RESPOSTA: use o modelo carga-resposta. A resposta de hoje foi esperada para a carga de ontem ou anômala? Conecte com a intenção inferida das sessões.
+- TREINO(S): cada sessão vs sua intenção inferida, leitura por modalidade, hipóteses causais calibradas para desvios.
+- TENDÊNCIAS: o que os sinais longitudinais revelam (sequências, declínios, monotonia).
+- AÇÃO E O QUE OBSERVAR: decisão de hoje + que dado confirmaria/mudaria a leitura amanhã."""
 
-DADOS DE HOJE ({dados['data']}):
+    user = f"""Gere o briefing de hoje em MODO {modo}.
+
+{instrucao_formato}
+
+Lembre: previsões de prova são de CORRIDA apenas — não as trate como foco se o dia for de outra modalidade.
+
+=== DADOS DE HOJE ({dados['data']}) ===
 {json.dumps(dados, indent=2, ensure_ascii=False)}
 
-COMPARACOES HISTORICAS:
-{json.dumps(comparacoes, indent=2, ensure_ascii=False)}
+=== SINAIS DETECTADOS (motor determinístico de padrões) ===
+{json.dumps(sinais, indent=2, ensure_ascii=False)}
 
-REFERENCIAS:
-- HRV noturno saudável: > 50ms
-- Sono ideal: >= 420 min
-- Sleep score ideal: >= 80
-- Body battery ao acordar: >= 70
-- ACWR zona ótima: 0.8-1.3
-- VO2max excelente (40-49 anos): > 46 ml/kg/min
-"""
+=== CARGA DO DIA E INTENÇÕES INFERIDAS ===
+{json.dumps(carga, indent=2, ensure_ascii=False)}
+
+=== MODELO CARGA-RESPOSTA INDIVIDUAL ===
+{json.dumps(modelo_cr, indent=2, ensure_ascii=False)}
+
+=== TREINO(S) PRESCRITO vs EXECUTADO (por modalidade) ===
+{json.dumps(treino, indent=2, ensure_ascii=False)}
+
+=== COMPARAÇÕES HISTÓRICAS (7d/30d/180d/365d) ===
+{json.dumps(comparacoes, indent=2, ensure_ascii=False)}"""
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=600,
-        messages=[{"role": "user", "content": prompt}]
+        max_tokens=2000,
+        system=system,
+        messages=[{"role": "user", "content": user}]
     )
-
     return response.content[0].text
 
 
@@ -64,16 +102,12 @@ def enviar_email(assunto: str, corpo: str):
     remetente = os.getenv("EMAIL_REMETENTE")
     senha_app = os.getenv("EMAIL_SENHA_APP")
     destinatario = os.getenv("EMAIL_DESTINATARIO")
-
     msg = MIMEMultipart("alternative")
     msg["Subject"] = assunto
     msg["From"] = remetente
     msg["To"] = destinatario
-
     msg.attach(MIMEText(corpo, "plain", "utf-8"))
-
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(remetente, senha_app)
         server.sendmail(remetente, destinatario, msg.as_string())
-
     print(f"Email enviado para {destinatario}")
