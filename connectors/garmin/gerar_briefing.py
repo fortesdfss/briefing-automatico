@@ -28,7 +28,7 @@ def carregar_conhecimento() -> str:
     return "\n\n---\n\n".join(blocos)
 
 
-def gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr) -> str:
+def gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr, bem_estar=None) -> str:
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     conhecimento = carregar_conhecimento()
 
@@ -44,6 +44,8 @@ FILOSOFIA (inviolável):
 - Confiança CALIBRADA. Nas primeiras semanas o modelo individual ainda está aprendendo (o campo modelo_carga_resposta dirá isso). Seja honesto: "ainda estou conhecendo seu padrão" é melhor que falsa precisão. Conforme o N cresce, fique mais assertivo.
 - Raciocínio causal HONESTO. Nomeie a hipótese mais provável, dê o grau de confiança, diga que dado a confirmaria. NUNCA invente precisão fisiológica que os dados não suportam (não afirme depleção de glicogênio sem marcador — diga "padrão compatível com X, hipótese"). O valor está em raciocinar bem sob incerteza.
 - Os SINAIS já vêm pré-detectados deterministicamente (motor de padrões). Você os INTERPRETA e conecta — não precisa recalcular, confie neles.
+- RPE e FEEL vêm do Garmin por atividade (rpe_borg 0-10, feel, sRPE de Foster). Use-os como CARGA INTERNA real e para desempate causal: RPE alto numa sessão objetivamente leve aponta fadiga/estresse/underfueling mais que a zona sozinha; RPE baixo numa sessão dura aponta bom frescor. O training_load do Garmin é o TRIMP real — mais fiel que calorias.
+- WELLBEING semanal traz estresse de vida, dores, motivação, sono subjetivo. Use como contexto que o relógio não vê. Se estiver VENCIDO (>9 dias) ou ausente, mencione UMA vez, ao final, de forma leve, que vale atualizar — sem insistir.
 - FC na natação é usada normalmente.
 - Multiesporte: cada modalidade tem leitura própria (ver base). Considere interferência concorrente.
 
@@ -82,6 +84,9 @@ Lembre: previsões de prova são de CORRIDA apenas — não as trate como foco s
 
 === MODELO CARGA-RESPOSTA INDIVIDUAL ===
 {json.dumps(modelo_cr, indent=2, ensure_ascii=False)}
+
+=== WELLBEING SEMANAL (contexto subjetivo; o relógio não captura) ===
+{json.dumps(bem_estar or {{"disponivel": False}}, indent=2, ensure_ascii=False)}
 
 === TREINO(S) PRESCRITO vs EXECUTADO (por modalidade) ===
 {json.dumps(treino, indent=2, ensure_ascii=False)}

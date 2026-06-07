@@ -66,6 +66,19 @@ def inferir_intencao(atividade: dict) -> dict:
         if deriva is not None and deriva > 5 and rotulo in ("base_aerobia", "longo_aerobio"):
             justificativa.append(f"deriva cardíaca de {deriva}% em sessão que deveria ser estável")
 
+    # Desempate causal: cruzar RPE/feel subjetivo com a estrutura objetiva
+    rpe = atividade.get("rpe_borg")
+    feel = atividade.get("feel")
+    if rpe is not None:
+        # Sessao objetivamente leve (Z2/recuperacao) mas RPE alto = sinal de fadiga/estresse
+        if rotulo in ("base_aerobia", "recuperacao_curto") and rpe >= 6:
+            justificativa.append(f"RPE {rpe}/10 desproporcionalmente alto para sessão leve — possível fadiga subjacente, sono ruim ou underfueling")
+        # Sessao objetivamente dura mas RPE baixo = boa forma/frescor
+        elif rotulo == "duro_intervalado" and rpe <= 4:
+            justificativa.append(f"RPE {rpe}/10 baixo para sessão dura — bom estado de forma/frescor")
+    if feel is not None and feel < 0:
+        justificativa.append(f"sensação subjetiva negativa (feel {feel}) reportada")
+
     elif familia == "caminhada":
         rotulo = "recuperacao_curto"
         justificativa.append("caminhada (recuperação ativa)")
@@ -80,8 +93,8 @@ def inferir_intencao(atividade: dict) -> dict:
 
 def carga_do_dia(dados: dict, treino: dict) -> dict:
     """
-    Resume a carga total do dia somando intenções das atividades.
-    Calcula um 'peso de sessão' grosseiro (0-10) para o modelo carga-resposta.
+    Resume a carga total do dia. Prioriza training_load real do Garmin e sRPE de
+    Foster (carga interna validada); cai para peso por intenção se ausentes.
     """
     pesos = {
         "duro_intervalado": 9, "moderado_limiar": 6, "longo_aerobio": 6,
@@ -90,15 +103,32 @@ def carga_do_dia(dados: dict, treino: dict) -> dict:
     atividades = treino.get("atividades", [])
     intencoes = []
     peso_total = 0
+    training_load_total = 0
+    srpe_total = 0
+    rpe_valores = []
+    feel_valores = []
+
     for a in atividades:
         inf = inferir_intencao(a)
         a["_intencao"] = inf
         intencoes.append(inf["intencao_inferida"])
         peso_total += pesos.get(inf["intencao_inferida"], 2)
+        if a.get("training_load"):
+            training_load_total += a["training_load"]
+        if a.get("sRPE_foster"):
+            srpe_total += a["sRPE_foster"]
+        if a.get("rpe_borg") is not None:
+            rpe_valores.append(a["rpe_borg"])
+        if a.get("feel") is not None:
+            feel_valores.append(a["feel"])
 
     return {
         "intencoes": intencoes,
         "peso_carga_dia": min(peso_total, 10),
+        "training_load_total": round(training_load_total) if training_load_total else None,
+        "sRPE_foster_total": srpe_total or None,
+        "rpe_medio": round(sum(rpe_valores) / len(rpe_valores), 1) if rpe_valores else None,
+        "feel_medio": round(sum(feel_valores) / len(feel_valores), 1) if feel_valores else None,
         "n_atividades": len(atividades),
         "calorias_ativas": dados.get("calorias_ativas"),
     }

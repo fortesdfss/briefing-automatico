@@ -59,6 +59,26 @@ def _analisar_atividade(client, ativ):
         "calorias": ativ.get("calories"),
     }
 
+    # Detalhe da atividade: RPE, feel, training load real, impacto na bateria
+    try:
+        det = client.get_activity(aid) or {}
+        rpe_garmin = det.get("workout_rpe")  # escala 0-100 (Borg CR10 x10)
+        base["rpe_borg"] = round(rpe_garmin / 10, 1) if rpe_garmin else None  # converte p/ 0-10
+        base["feel"] = det.get("workout_feel")  # sensacao subjetiva
+        base["training_load"] = det.get("training_load")  # TRIMP real do Garmin
+        base["training_effect"] = det.get("training_effect")
+        base["training_effect_label"] = det.get("training_effect_label")
+        base["body_battery_impact"] = det.get("body_battery_impact")
+        # sRPE de Foster = RPE(0-10) x duracao(min) — carga interna validada
+        if base["rpe_borg"] and base["duracao_min"]:
+            base["sRPE_foster"] = round(base["rpe_borg"] * base["duracao_min"])
+        else:
+            base["sRPE_foster"] = None
+    except Exception:
+        base.update({"rpe_borg": None, "feel": None, "training_load": None,
+                     "training_effect": None, "training_effect_label": None,
+                     "body_battery_impact": None, "sRPE_foster": None})
+
     # Tempo por zona de FC (todas as modalidades com FC confiável)
     if familia in ("corrida", "ciclismo", "cardio"):
         try:

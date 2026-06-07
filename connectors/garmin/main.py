@@ -76,6 +76,16 @@ def main():
         print(f"Aviso modelo CR: {e}")
         modelo_cr = {"status": "indisponivel", "confianca": "baixa"}
 
+    # 6b — Wellbeing semanal
+    try:
+        from wellbeing import carregar_wellbeing
+        bem_estar = carregar_wellbeing()
+        if bem_estar.get("vencido"):
+            print("Wellbeing vencido ou ausente\n")
+    except Exception as e:
+        print(f"Aviso wellbeing: {e}")
+        bem_estar = {"disponivel": False, "vencido": True}
+
     # 7 — Salvar histórico de hoje (com campos dos motores)
     try:
         dados["treino"] = treino
@@ -89,7 +99,7 @@ def main():
     try:
         from gerar_briefing import gerar_briefing, enviar_email
         print("Interpretando (fisiologista)...")
-        briefing = gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr)
+        briefing = gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr, bem_estar)
         print("\n" + "="*50)
         print(briefing)
         print("="*50 + "\n")
