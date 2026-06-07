@@ -6,24 +6,45 @@ Nenhuma inferência ou interpretação aqui — só fatos.
 
 import os
 import json
+import time
+import random
 from datetime import date, timedelta
 from dotenv import load_dotenv
 import garminconnect
 
 load_dotenv()
 
+TOKENSTORE = os.path.join(os.path.dirname(__file__), ".garmin_tokens")
+
 def conectar_garmin():
     email = os.getenv("GARMIN_EMAIL")
     senha = os.getenv("GARMIN_PASSWORD")
-    client = garminconnect.Garmin(email, senha)
-    client.login()
+
+    time.sleep(random.uniform(1.5, 3.5))
+
+    client = garminconnect.Garmin(
+        email=email,
+        password=senha,
+        return_on_mfa_prompt=False,
+        prompt_mfa=None
+    )
+
+    try:
+        client.login(TOKENSTORE)
+        print("Sessao Garmin restaurada")
+    except Exception:
+        print("Fazendo login no Garmin...")
+        time.sleep(random.uniform(2, 4))
+        client.login()
+        try:
+            client.garth.dump(TOKENSTORE)
+            print("Tokens salvos")
+        except Exception as e:
+            print(f"Nao foi possivel salvar tokens: {e}")
+
     return client
 
 def calcular_acwr(client, hoje):
-    """
-    ACWR = carga aguda (7 dias) / carga crônica (28 dias)
-    Usa Training Load (se disponível) ou calorias como proxy.
-    """
     try:
         cargas = []
         for i in range(28):
@@ -32,6 +53,7 @@ def calcular_acwr(client, hoje):
                 stats = client.get_stats(dia)
                 carga = stats.get("activeKilocalories", 0) or 0
                 cargas.append(carga)
+                time.sleep(0.3)
             except Exception:
                 cargas.append(0)
 
@@ -67,17 +89,19 @@ def coletar(hoje=None):
     # Sono
     try:
         sono = client.get_sleep_data(ontem_str)
-        resumo = sono.get("dailySleepDTO", {})
-        dados["sono_total_min"] = resumo.get("sleepTimeSeconds", 0) // 60
-        dados["sono_profundo_min"] = resumo.get("deepSleepSeconds", 0) // 60
-        dados["sono_score"] = resumo.get("sleepScores", {}).get("overall", {}).get("value")
+        resumo = sono.get("dailySleepDTO") or {}
+        dados["sono_total_min"] = (resumo.get("sleepTimeSeconds") or 0) // 60
+        dados["sono_profundo_min"] = (resumo.get("deepSleepSeconds") or 0) // 60
+        scores = resumo.get("sleepScores") or {}
+        overall = scores.get("overall") or {}
+        dados["sono_score"] = overall.get("value")
     except Exception as e:
         dados["erros"].append(f"Sono: {e}")
         dados["sono_total_min"] = None
         dados["sono_profundo_min"] = None
         dados["sono_score"] = None
 
-    # Body Battery / Readiness
+    # Body Battery
     try:
         bb = client.get_body_battery(hoje_str, hoje_str)
         if bb and len(bb) > 0:
@@ -92,7 +116,7 @@ def coletar(hoje=None):
         dados["body_battery_max"] = None
         dados["body_battery_atual"] = None
 
-    # VO2máx
+    # Stats gerais
     try:
         stats = client.get_stats(hoje_str)
         dados["vo2max"] = stats.get("maxMetValue")
@@ -109,9 +133,10 @@ def coletar(hoje=None):
     # Peso
     try:
         peso_data = client.get_weigh_ins(hoje_str, hoje_str)
-        registros = peso_data.get("dailyWeightSummaries", [])
+        registros = peso_data.get("dailyWeightSummaries") or []
         if registros:
-            peso_g = registros[0].get("summaryList", [{}])[0].get("weight")
+            summary_list = registros[0].get("summaryList") or [{}]
+            peso_g = summary_list[0].get("weight")
             dados["peso_kg"] = round(peso_g / 1000, 1) if peso_g else None
         else:
             dados["peso_kg"] = None
@@ -119,7 +144,7 @@ def coletar(hoje=None):
         dados["erros"].append(f"Peso: {e}")
         dados["peso_kg"] = None
 
-    # Previsão de prova
+    # Previsao de prova
     try:
         previsao = client.get_race_predictions()
         dados["previsao_5k"] = previsao.get("time5K")
@@ -127,7 +152,7 @@ def coletar(hoje=None):
         dados["previsao_meia"] = previsao.get("timeHalfMarathon")
         dados["previsao_maratona"] = previsao.get("timeMarathon")
     except Exception as e:
-        dados["erros"].append(f"Previsão de prova: {e}")
+        dados["erros"].append(f"Previsao de prova: {e}")
         dados["previsao_5k"] = None
         dados["previsao_10k"] = None
         dados["previsao_meia"] = None
