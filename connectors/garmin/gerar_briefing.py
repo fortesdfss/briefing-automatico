@@ -28,7 +28,8 @@ def carregar_conhecimento() -> str:
     return "\n\n---\n\n".join(blocos)
 
 
-def gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr, bem_estar=None) -> str:
+def gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr, bem_estar=None,
+                   exclusoes=None, nao_resposta=None, lacunas=None) -> str:
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     conhecimento = carregar_conhecimento()
 
@@ -46,6 +47,9 @@ FILOSOFIA (inviolável):
 - Os SINAIS já vêm pré-detectados deterministicamente (motor de padrões). Você os INTERPRETA e conecta — não precisa recalcular, confie neles.
 - RPE e FEEL vêm do Garmin por atividade (rpe_borg 0-10, feel, sRPE de Foster). Use-os como CARGA INTERNA real e para desempate causal: RPE alto numa sessão objetivamente leve aponta fadiga/estresse/underfueling mais que a zona sozinha; RPE baixo numa sessão dura aponta bom frescor. O training_load do Garmin é o TRIMP real — mais fiel que calorias.
 - WELLBEING semanal traz estresse de vida, dores, motivação, sono subjetivo. Use como contexto que o relógio não vê. Se estiver VENCIDO (>9 dias) ou ausente, mencione UMA vez, ao final, de forma leve, que vale atualizar — sem insistir.
+- EXCLUSÃO CAUSAL: quando vier preenchida, USE-A como espinha dorsal do raciocínio causal. Não reliste hipóteses soltas — apresente o raciocínio de eliminação: "descartei X (porque dado Y), descartei Z (porque W), sobra A". Isso é o diferencial: lógica de exclusão auditável, não chute. Se sobrou uma única causa, seja assertivo nela; se sobraram duas, nomeie ambas e diga qual dado desempata.
+- NÃO-RESPOSTA: se o motor sinalizar padrão "nao_resposta" ou "overreaching", este é provavelmente o insight principal do dia — abra por ele. Distinga não-resposta (mudar a natureza do estímulo) de overreaching (recuperar) de platô por falta de carga (progredir). É um insight que nenhum app comum dá.
+- LACUNAS: se houver lacunas acionáveis, traga no máximo UMA ou DUAS, as de maior prioridade, ao final, como pedido objetivo e justificado — "para eu fechar essa dúvida, me dê tal dado". Não despeje todas. O objetivo é ensinar o atleta a alimentar o sistema, não sobrecarregá-lo.
 - FC na natação é usada normalmente.
 - Multiesporte: cada modalidade tem leitura própria (ver base). Considere interferência concorrente.
 
@@ -91,6 +95,15 @@ Lembre: previsões de prova são de CORRIDA apenas — não as trate como foco s
 === TREINO(S) PRESCRITO vs EXECUTADO (por modalidade) ===
 {json.dumps(treino, indent=2, ensure_ascii=False)}
 
+=== EXCLUSÃO CAUSAL ESTRUTURADA (causas descartadas vs sobreviventes) ===
+{json.dumps(exclusoes or [], indent=2, ensure_ascii=False)}
+
+=== DETECÇÃO DE NÃO-RESPOSTA / PLATÔ (trajetória carga vs fitness) ===
+{json.dumps(nao_resposta or {{"aplicavel": False}}, indent=2, ensure_ascii=False)}
+
+=== LACUNAS DE DADOS (o que pedir ao atleta para fechar ambiguidade) ===
+{json.dumps(lacunas or [], indent=2, ensure_ascii=False)}
+
 === COMPARAÇÕES HISTÓRICAS (7d/30d/180d/365d) ===
 {json.dumps(comparacoes, indent=2, ensure_ascii=False)}"""
 
@@ -103,7 +116,7 @@ Lembre: previsões de prova são de CORRIDA apenas — não as trate como foco s
     return response.content[0].text
 
 
-def enviar_email(assunto: str, corpo: str):
+def enviar_email(assunto: str, corpo: str, html_extra: str = ""):
     remetente = os.getenv("EMAIL_REMETENTE")
     senha_app = os.getenv("EMAIL_SENHA_APP")
     destinatario = os.getenv("EMAIL_DESTINATARIO")
@@ -111,7 +124,21 @@ def enviar_email(assunto: str, corpo: str):
     msg["Subject"] = assunto
     msg["From"] = remetente
     msg["To"] = destinatario
+
+    # Texto puro (fallback)
     msg.attach(MIMEText(corpo, "plain", "utf-8"))
+
+    # HTML: briefing formatado + formulario opcional
+    corpo_html = corpo.replace("\n", "<br>")
+    html = (
+        '<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;'
+        'font-size:15px;line-height:1.6;color:#222;">'
+        f'{corpo_html}'
+        f'{html_extra}'
+        '</div>'
+    )
+    msg.attach(MIMEText(html, "html", "utf-8"))
+
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(remetente, senha_app)
         server.sendmail(remetente, destinatario, msg.as_string())

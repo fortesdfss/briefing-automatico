@@ -86,6 +86,36 @@ def main():
         print(f"Aviso wellbeing: {e}")
         bem_estar = {"disponivel": False, "vencido": True}
 
+    # 6c — Exclusão causal estruturada
+    try:
+        from motor_exclusao_causal import rodar_exclusao
+        exclusoes = rodar_exclusao(treino, dados)
+        if exclusoes:
+            print(f"Exclusão causal: {len(exclusoes)} achado(s) analisado(s)\n")
+    except Exception as e:
+        print(f"Aviso exclusão: {e}")
+        exclusoes = []
+
+    # 6d — Detecção de não-resposta / platô
+    try:
+        from motor_nao_resposta import detectar_nao_resposta
+        nao_resposta = detectar_nao_resposta(historico)
+        if nao_resposta.get("relevante"):
+            print(f"NÃO-RESPOSTA/PLATÔ: padrão {nao_resposta.get('padrao')}\n")
+    except Exception as e:
+        print(f"Aviso não-resposta: {e}")
+        nao_resposta = {"aplicavel": False}
+
+    # 6e — Lacunas de dados
+    try:
+        from motor_lacunas import identificar_lacunas
+        lacunas = identificar_lacunas(exclusoes, dados, treino)
+        if lacunas:
+            print(f"Lacunas identificadas: {[l['tipo'] for l in lacunas]}\n")
+    except Exception as e:
+        print(f"Aviso lacunas: {e}")
+        lacunas = []
+
     # 7 — Salvar histórico de hoje (com campos dos motores)
     try:
         dados["treino"] = treino
@@ -99,19 +129,22 @@ def main():
     try:
         from gerar_briefing import gerar_briefing, enviar_email
         print("Interpretando (fisiologista)...")
-        briefing = gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr, bem_estar)
+        briefing = gerar_briefing(dados, comparacoes, treino, sinais, carga, modelo_cr,
+                                  bem_estar, exclusoes, nao_resposta, lacunas)
         print("\n" + "="*50)
         print(briefing)
         print("="*50 + "\n")
     except Exception as e:
         print(f"Erro no briefing: {e}"); traceback.print_exc(); sys.exit(1)
 
-    # 9 — Email
+    # 9 — Email (com formulário de wellbeing aos domingos)
     try:
-        modo = "[!] " if sinais.get("houve_mudanca_relevante") else ""
+        from wellbeing import eh_domingo, formulario_html
+        html_extra = formulario_html() if eh_domingo(hoje) else ""
+        modo = "[!] " if sinais.get("houve_mudanca_relevante") or nao_resposta.get("relevante") else ""
         assunto = f"{modo}Fisiologista — {hoje.strftime('%d/%m/%Y')}"
         print("Enviando email...")
-        enviar_email(assunto, briefing)
+        enviar_email(assunto, briefing, html_extra)
         print("Concluído!")
     except Exception as e:
         print(f"Erro no email: {e}"); traceback.print_exc(); sys.exit(1)

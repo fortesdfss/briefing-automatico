@@ -151,6 +151,20 @@ def _analisar_atividade(client, ativ):
         except Exception:
             base["exercicios"] = None
 
+    # Clima da atividade (para exclusao causal de calor/ambiente)
+    try:
+        clima = client.get_activity_weather(aid)
+        if clima:
+            temp = clima.get("temp")  # Celsius
+            base["temperatura_c"] = temp
+            base["umidade_pct"] = clima.get("relativeHumidity")
+        else:
+            base["temperatura_c"] = None
+            base["umidade_pct"] = None
+    except Exception:
+        base["temperatura_c"] = None
+        base["umidade_pct"] = None
+
     return base
 
 
@@ -160,16 +174,27 @@ def coletar_treino(client, hoje: date) -> dict:
 
     # ---- PRESCRITO ----
     try:
-        agendados = client.get_scheduled_workouts(hoje_str, hoje_str)
+        agendados = None
+        # Tenta a assinatura por datas (versoes recentes da lib)
+        try:
+            agendados = client.get_scheduled_workouts(hoje_str, hoje_str)
+        except (TypeError, ValueError):
+            # Fallback: versoes antigas usam plano de treino
+            try:
+                plano = client.get_training_plan_workouts(hoje_str)
+                agendados = plano if isinstance(plano, list) else None
+            except Exception:
+                agendados = None
+
         if agendados:
             w = agendados[0]
-            wid = w.get("workoutId") or w.get("workout", {}).get("workoutId")
+            wid = w.get("workoutId") or w.get("workout_uuid") or (w.get("workout") or {}).get("workoutId")
             detalhe = client.get_workout_by_id(wid) if wid else {}
             steps = []
-            for seg in detalhe.get("workoutSegments", []):
+            for seg in (detalhe or {}).get("workoutSegments", []):
                 for step in seg.get("workoutSteps", []):
                     steps.append({
-                        "tipo": step.get("stepType", {}).get("stepTypeKey"),
+                        "tipo": (step.get("stepType") or {}).get("stepTypeKey"),
                         "zona_alvo": step.get("zoneNumber"),
                         "alvo_min": step.get("targetValueOne"),
                         "alvo_max": step.get("targetValueTwo"),
@@ -177,8 +202,8 @@ def coletar_treino(client, hoje: date) -> dict:
                         "duracao_valor": step.get("endConditionValue"),
                     })
             resultado["prescrito"] = {
-                "nome": detalhe.get("workoutName") or w.get("workoutName"),
-                "esporte": detalhe.get("sportType", {}).get("sportTypeKey"),
+                "nome": (detalhe or {}).get("workoutName") or w.get("workoutName"),
+                "esporte": ((detalhe or {}).get("sportType") or {}).get("sportTypeKey"),
                 "steps": steps,
             }
     except Exception as e:
