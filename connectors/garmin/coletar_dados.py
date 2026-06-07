@@ -22,12 +22,7 @@ def conectar_garmin():
 
     time.sleep(random.uniform(1.5, 3.5))
 
-    client = garminconnect.Garmin(
-        email=email,
-        password=senha,
-        return_on_mfa_prompt=False,
-        prompt_mfa=None
-    )
+    client = garminconnect.Garmin(email, senha)
 
     try:
         client.login(TOKENSTORE)
