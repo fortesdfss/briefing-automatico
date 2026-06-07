@@ -15,21 +15,26 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Instalar dependencias
-        run: pip install garminconnect anthropic python-dotenv requests
+        run: pip install garminconnect anthropic python-dotenv requests cryptography
+
       - name: Criar env
         run: |
-          echo "GARMIN_EMAIL=${{ secrets.GARMIN_EMAIL }}" >> .env
-          echo "GARMIN_PASSWORD=${{ secrets.GARMIN_PASSWORD }}" >> .env
           echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
           echo "EMAIL_REMETENTE=${{ secrets.EMAIL_REMETENTE }}" >> .env
           echo "EMAIL_SENHA_APP=${{ secrets.EMAIL_SENHA_APP }}" >> .env
-          echo "EMAIL_DESTINATARIO=${{ secrets.EMAIL_DESTINATARIO }}" >> .env
-      - name: Rodar briefing
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
+          echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> .env
+
+      - name: Rodar briefing para todos os atletas
         run: python connectors/garmin/main.py
+
       - name: Salvar historico no repositorio
         run: |
           git config user.name "github-actions[bot]"
