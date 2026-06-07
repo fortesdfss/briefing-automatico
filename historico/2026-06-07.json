@@ -56,9 +56,7 @@
   "treino": {
     "prescrito": null,
     "atividades": [],
-    "erros": [
-      "Prescrito: invalid literal for int() with base 10: '2026-06-07'"
-    ],
+    "erros": [],
     "n_atividades": 0,
     "modalidades_do_dia": []
   }
