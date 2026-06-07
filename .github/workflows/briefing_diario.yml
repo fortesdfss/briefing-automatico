@@ -1,0 +1,35 @@
+name: Briefing Garmin Diário
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install garminconnect anthropic python-dotenv requests
+
+      - name: Criar arquivo .env com secrets
+        run: |
+          echo "GARMIN_EMAIL=${{ secrets.GARMIN_EMAIL }}" >> .env
+          echo "GARMIN_PASSWORD=${{ secrets.GARMIN_PASSWORD }}" >> .env
+          echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+          echo "EMAIL_REMETENTE=${{ secrets.EMAIL_REMETENTE }}" >> .env
+          echo "EMAIL_SENHA_APP=${{ secrets.EMAIL_SENHA_APP }}" >> .env
+          echo "EMAIL_DESTINATARIO=${{ secrets.EMAIL_DESTINATARIO }}" >> .env
+
+      - name: Rodar briefing
+        run: python connectors/garmin/main.py
