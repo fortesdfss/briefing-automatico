@@ -7,6 +7,12 @@ import os
 import base64
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 
 def _descriptografar(senha_encriptada: str, encryption_key: str) -> str:
     """Descriptografa a senha AES-GCM salva pelo formulário."""
