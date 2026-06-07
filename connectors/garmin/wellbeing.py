@@ -101,8 +101,7 @@ def formulario_html(repo="fortesdfss/briefing-automatico") -> str:
         + escala7("estresse", "Estresse de vida (trabalho/pessoal)", "muito baixo", "muito alto")
         + escala7("dores_musculares", "Dores musculares (DOMS)", "nenhuma", "intensas")
         + escala5("motivacao", "Motivação para treinar", "nenhuma", "altíssima")
-        + '<div style="font-size:12px;color:#888;margin-top:10px;">Dores específicas ou observações? Responda este email com o texto.</div>'
-        '</div>'
+        + '</div>'
     )
 
 

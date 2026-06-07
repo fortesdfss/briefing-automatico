@@ -59,52 +59,57 @@ TOM: fisiologista experiente falando com um atleta que é cientista. Técnico, d
     houve_mudanca = sinais.get("houve_mudanca_relevante") or modelo_cr.get("anomalia")
     modo = "PROFUNDO" if houve_mudanca else "CIRÚRGICO"
 
-    instrucao_formato = """MODO CIRÚRGICO (dia normal, sem mudanças relevantes): seja breve e direto. Máximo ~180 palavras.
-- Uma leitura rápida do estado (1-2 frases integrando recuperação/prontidão).
-- Comentário do(s) treino(s) de hoje vs intenção inferida (1-2 frases por sessão, só o que importa).
-- AÇÃO DO DIA: uma decisão clara e justificada.
-Não encha de números que ele já viu no Garmin. Vá ao significado.""" if modo == "CIRÚRGICO" else """MODO PROFUNDO (algo mudou — sinal de severidade alta ou anomalia carga-resposta): análise completa. Até ~450 palavras.
-- Abra pelo que mudou e por que importa (o insight principal).
-- RECUPERAÇÃO E PRONTIDÃO: integre HRV (rMSSD vs HRV7 vs baseline, desvio %, status), Readiness e seus fatores, Stress Index, sono, FCrep — por CONVERGÊNCIA, conectando aos sinais detectados.
-- CARGA E RESPOSTA: use o modelo carga-resposta. A resposta de hoje foi esperada para a carga de ontem ou anômala? Conecte com a intenção inferida das sessões.
-- TREINO(S): cada sessão vs sua intenção inferida, leitura por modalidade, hipóteses causais calibradas para desvios.
-- TENDÊNCIAS: o que os sinais longitudinais revelam (sequências, declínios, monotonia).
-- AÇÃO E O QUE OBSERVAR: decisão de hoje + que dado confirmaria/mudaria a leitura amanhã."""
+    instrucao_formato = """MODO CIRÚRGICO (dia normal): breve e direto. Abertura curta opcional. 2-3 seções no máximo, corpo de 1-2 frases cada. Vá ao significado, não aos números que ele já viu.""" if modo == "CIRÚRGICO" else """MODO PROFUNDO (algo mudou): análise completa. Abra pelo insight principal. Seções: Recuperação e Prontidão, Carga e Resposta, Treino(s), Tendências. Corpo denso mas claro."""
+
+    formato_saida = """
+FORMATO DE SAÍDA — responda APENAS com um objeto JSON válido, sem markdown, sem cercas de código, nesta estrutura exata:
+{
+  "abertura": "1-2 frases de abertura com o insight principal do dia, ou null se dia trivial",
+  "secoes": [
+    {"titulo": "Recuperação e Prontidão", "estado": "🟢|🟡|🔴", "corpo": "prosa interpretativa"},
+    {"titulo": "...", "estado": "...", "corpo": "..."}
+  ],
+  "acao_do_dia": "uma recomendação específica e fisiologicamente justificada",
+  "observacao_final": "observação leve (ex: wellbeing vencido) ou null"
+}
+Use os semáforos 🟢🟡🔴 no campo estado. O corpo de cada seção é prosa em português, tom de fisiologista. NÃO inclua nada fora do JSON."""
 
     user = f"""Gere o briefing de hoje em MODO {modo}.
 
 {instrucao_formato}
 
-Lembre: previsões de prova são de CORRIDA apenas — não as trate como foco se o dia for de outra modalidade.
+{formato_saida}
+
+Lembre: previsões de prova são de CORRIDA apenas. Exclusão causal como espinha dorsal do raciocínio. Não-resposta abre o dia se relevante. Lacunas no máximo 1-2 ao final.
 
 === DADOS DE HOJE ({dados['data']}) ===
 {json.dumps(dados, indent=2, ensure_ascii=False)}
 
-=== SINAIS DETECTADOS (motor determinístico de padrões) ===
+=== SINAIS DETECTADOS ===
 {json.dumps(sinais, indent=2, ensure_ascii=False)}
 
-=== CARGA DO DIA E INTENÇÕES INFERIDAS ===
+=== CARGA E INTENÇÕES ===
 {json.dumps(carga, indent=2, ensure_ascii=False)}
 
-=== MODELO CARGA-RESPOSTA INDIVIDUAL ===
+=== MODELO CARGA-RESPOSTA ===
 {json.dumps(modelo_cr, indent=2, ensure_ascii=False)}
 
-=== WELLBEING SEMANAL (contexto subjetivo; o relógio não captura) ===
+=== WELLBEING SEMANAL ===
 {json.dumps(bem_estar or {{"disponivel": False}}, indent=2, ensure_ascii=False)}
 
-=== TREINO(S) PRESCRITO vs EXECUTADO (por modalidade) ===
+=== TREINO(S) ===
 {json.dumps(treino, indent=2, ensure_ascii=False)}
 
-=== EXCLUSÃO CAUSAL ESTRUTURADA (causas descartadas vs sobreviventes) ===
+=== EXCLUSÃO CAUSAL ===
 {json.dumps(exclusoes or [], indent=2, ensure_ascii=False)}
 
-=== DETECÇÃO DE NÃO-RESPOSTA / PLATÔ (trajetória carga vs fitness) ===
+=== NÃO-RESPOSTA / PLATÔ ===
 {json.dumps(nao_resposta or {{"aplicavel": False}}, indent=2, ensure_ascii=False)}
 
-=== LACUNAS DE DADOS (o que pedir ao atleta para fechar ambiguidade) ===
+=== LACUNAS ===
 {json.dumps(lacunas or [], indent=2, ensure_ascii=False)}
 
-=== COMPARAÇÕES HISTÓRICAS (7d/30d/180d/365d) ===
+=== COMPARAÇÕES HISTÓRICAS ===
 {json.dumps(comparacoes, indent=2, ensure_ascii=False)}"""
 
     response = client.messages.create(
@@ -113,30 +118,85 @@ Lembre: previsões de prova são de CORRIDA apenas — não as trate como foco s
         system=system,
         messages=[{"role": "user", "content": user}]
     )
-    return response.content[0].text
+    texto = response.content[0].text.strip()
+
+    # Parsing robusto do JSON
+    estruturado = _parse_json_briefing(texto, dados)
+    estruturado["modo"] = modo
+    estruturado.setdefault("data", _data_br(dados["data"]))
+    return estruturado
 
 
-def enviar_email(assunto: str, corpo: str, html_extra: str = ""):
+def _data_br(iso: str) -> str:
+    try:
+        from datetime import date as _d
+        d = _d.fromisoformat(iso)
+        return d.strftime("%d/%m/%Y")
+    except Exception:
+        return iso
+
+
+def _parse_json_briefing(texto: str, dados: dict) -> dict:
+    """Extrai o JSON do briefing, tolerante a cercas de código."""
+    import re
+    limpo = texto.strip()
+    limpo = re.sub(r'^```(?:json)?', '', limpo).strip()
+    limpo = re.sub(r'```$', '', limpo).strip()
+    try:
+        return json.loads(limpo)
+    except Exception:
+        # Fallback: tenta achar o primeiro { ... } balanceado
+        ini = limpo.find('{')
+        fim = limpo.rfind('}')
+        if ini >= 0 and fim > ini:
+            try:
+                return json.loads(limpo[ini:fim+1])
+            except Exception:
+                pass
+        # Último recurso: devolve o texto cru como uma seção única
+        return {
+            "abertura": None,
+            "secoes": [{"titulo": "Briefing", "estado": "", "corpo": texto.replace(chr(10), "<br>")}],
+            "acao_do_dia": "",
+            "observacao_final": None,
+        }
+
+
+def _texto_puro(estruturado: dict) -> str:
+    """Versão texto puro do briefing estruturado (fallback do email)."""
+    linhas = []
+    if estruturado.get("abertura"):
+        linhas.append(estruturado["abertura"])
+        linhas.append("")
+    for s in estruturado.get("secoes", []):
+        linhas.append(f"{s.get('estado','')} {s.get('titulo','').upper()}")
+        # remove tags HTML simples do corpo
+        import re
+        corpo = re.sub(r'<[^>]+>', '', s.get("corpo", ""))
+        linhas.append(corpo)
+        linhas.append("")
+    if estruturado.get("acao_do_dia"):
+        linhas.append(f"AÇÃO DO DIA: {estruturado['acao_do_dia']}")
+    if estruturado.get("observacao_final"):
+        linhas.append("")
+        linhas.append(estruturado["observacao_final"])
+    return "\n".join(linhas)
+
+
+def enviar_email(assunto: str, briefing_estruturado: dict, formulario_html: str = ""):
+    from template_email import montar_email
     remetente = os.getenv("EMAIL_REMETENTE")
     senha_app = os.getenv("EMAIL_SENHA_APP")
     destinatario = os.getenv("EMAIL_DESTINATARIO")
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = assunto
     msg["From"] = remetente
     msg["To"] = destinatario
 
-    # Texto puro (fallback)
-    msg.attach(MIMEText(corpo, "plain", "utf-8"))
-
-    # HTML: briefing formatado + formulario opcional
-    corpo_html = corpo.replace("\n", "<br>")
-    html = (
-        '<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;'
-        'font-size:15px;line-height:1.6;color:#222;">'
-        f'{corpo_html}'
-        f'{html_extra}'
-        '</div>'
-    )
+    # Fallback texto puro + HTML premium
+    msg.attach(MIMEText(_texto_puro(briefing_estruturado), "plain", "utf-8"))
+    html = montar_email(briefing_estruturado, formulario_html)
     msg.attach(MIMEText(html, "html", "utf-8"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
