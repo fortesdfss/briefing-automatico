@@ -15,15 +15,24 @@ except Exception:
 
 
 def _descriptografar(senha_encriptada: str, encryption_key: str) -> str:
-    """Descriptografa a senha AES-GCM salva pelo formulário."""
+    """
+    Descriptografa a senha AES-GCM salva pelo formulário JavaScript.
+    O JS usa crypto.subtle com AES-GCM 128-bit IV (12 bytes) e tag de 128 bits.
+    Formato salvo: base64(iv) + '.' + base64(ciphertext+tag)
+    """
     partes = senha_encriptada.split('.')
     if len(partes) != 2:
         raise ValueError("Formato de senha inválido")
+
     iv = base64.b64decode(partes[0])
-    ciphertext = base64.b64decode(partes[1])
+    ciphertext_with_tag = base64.b64decode(partes[1])
+
+    # Chave: 32 bytes (padded ou truncado)
     key = encryption_key.ljust(32, '0')[:32].encode()
+
     aesgcm = AESGCM(key)
-    return aesgcm.decrypt(iv, ciphertext, None).decode()
+    decrypted = aesgcm.decrypt(iv, ciphertext_with_tag, None)
+    return decrypted.decode('utf-8')
 
 
 def buscar_atletas() -> list[dict]:
@@ -59,7 +68,7 @@ def buscar_atletas() -> list[dict]:
                 "garmin_password": senha,
             })
         except Exception as e:
-            print(f"Erro ao descriptografar senha de {a.get('email')}: {e}")
+            print(f"Erro ao descriptografar senha de {a.get('email')}: {type(e).__name__}: {e}")
 
     return resultado
 
