@@ -67,10 +67,11 @@ function paginaFormulario() {
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    body { margin:0; padding:32px 16px; background:${COR_FUNDO};
+    body { margin:0; min-height:100vh; display:flex; align-items:center;
+           justify-content:center; padding:32px 16px; background:${COR_FUNDO};
            font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif; }
     .card { background:${COR_PAPEL}; border:1px solid ${COR_LINHA}; border-radius:4px;
-            max-width:560px; margin:0 auto; padding:40px 44px 44px; }
+            width:100%; max-width:520px; padding:40px 44px 44px; }
     .btn-enviar { width:100%;padding:16px;margin-top:32px;background:${COR_TINTA};
                   color:#f7f5f1;border:none;border-radius:4px;cursor:pointer;
                   font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
