@@ -133,7 +133,7 @@ def rodar_para_atleta(atleta: dict, hoje: date):
     # 9 — Enviar email
     try:
         from wellbeing import eh_domingo, formulario_html
-        html_extra = formulario_html() if eh_domingo(hoje) else ""
+        html_extra = formulario_html()  # TEST: sempre mostrar o formulário
         modo = "[!] " if sinais.get("houve_mudanca_relevante") or nao_resposta.get("relevante") else ""
         assunto = f"{modo}Briefing Fisiológico — {hoje.strftime('%d/%m/%Y')}"
         enviar_email(assunto, briefing, html_extra, bem_estar)
