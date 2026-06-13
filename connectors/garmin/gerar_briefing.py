@@ -183,7 +183,7 @@ def _texto_puro(estruturado: dict) -> str:
     return "\n".join(linhas)
 
 
-def enviar_email(assunto: str, briefing_estruturado: dict, formulario_html: str = ""):
+def enviar_email(assunto: str, briefing_estruturado: dict, formulario_html: str = "", bem_estar: dict = None):
     from template_email import montar_email
     remetente = os.getenv("EMAIL_REMETENTE")
     senha_app = os.getenv("EMAIL_SENHA_APP")
@@ -196,7 +196,7 @@ def enviar_email(assunto: str, briefing_estruturado: dict, formulario_html: str 
 
     # Fallback texto puro + HTML premium
     msg.attach(MIMEText(_texto_puro(briefing_estruturado), "plain", "utf-8"))
-    html = montar_email(briefing_estruturado, formulario_html)
+    html = montar_email(briefing_estruturado, formulario_html, bem_estar)
     msg.attach(MIMEText(html, "html", "utf-8"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:

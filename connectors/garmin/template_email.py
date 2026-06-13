@@ -71,7 +71,65 @@ def _acao_destaque(texto: str) -> str:
     </td></tr>"""
 
 
-def montar_email(briefing_estruturado: dict, formulario_html: str = "") -> str:
+def bloco_wellbeing_html(bem_estar: dict) -> str:
+    """Bloco visual com os scores de wellbeing, quando disponível e não vencido."""
+    if not bem_estar or not bem_estar.get("disponivel") or bem_estar.get("vencido"):
+        return ""
+
+    campos = [
+        ("sono_qualidade", "Sono", 7),
+        ("fadiga",         "Fadiga", 7),
+        ("estresse",       "Estresse", 7),
+        ("dores_musculares", "Dores musculares", 7),
+        ("motivacao",      "Motivação", 5),
+    ]
+
+    def cor_badge(valor, maximo):
+        if valor is None:
+            return COR_SUAVE
+        ratio = valor / maximo
+        if ratio <= 0.35:
+            return COR_VERDE
+        if ratio <= 0.65:
+            return COR_AMBAR
+        return COR_VERMELHO
+
+    itens = ""
+    for campo, label, maximo in campos:
+        v = bem_estar.get(campo)
+        if v is None:
+            continue
+        cor = cor_badge(v, maximo)
+        itens += (
+            f'<span style="display:inline-flex;align-items:center;margin:4px 10px 4px 0;'
+            f'font-family:{FONTE_ROTULO};font-size:12px;color:{COR_TEXTO};">'
+            f'<span style="display:inline-block;width:9px;height:9px;border-radius:50%;'
+            f'background:{cor};margin-right:6px;flex-shrink:0;"></span>'
+            f'{label}: <strong style="margin-left:4px;">{v}/{maximo}</strong></span>'
+        )
+
+    if not itens:
+        return ""
+
+    data_reg = bem_estar.get("data_registro", "")
+    dias = bem_estar.get("dias_desde_registro")
+    legenda = f"registrado em {data_reg}" if not dias else (
+        "hoje" if dias == 0 else f"há {dias} dia{'s' if dias > 1 else ''}"
+    )
+
+    return f"""
+    <tr><td style="padding:26px 44px 0 44px;">
+      <div style="border:1px solid {COR_LINHA};border-radius:3px;padding:18px 20px;">
+        <div style="font-family:{FONTE_ROTULO};font-size:11px;letter-spacing:1.5px;
+                    text-transform:uppercase;color:{COR_SUAVE};font-weight:700;margin-bottom:12px;">
+          Wellbeing subjetivo <span style="font-weight:400;letter-spacing:0;">— {legenda}</span>
+        </div>
+        <div style="line-height:1.8;">{itens}</div>
+      </div>
+    </td></tr>"""
+
+
+def montar_email(briefing_estruturado: dict, formulario_html: str = "", bem_estar: dict = None) -> str:
     """
     briefing_estruturado esperado:
     {
@@ -112,6 +170,8 @@ def montar_email(briefing_estruturado: dict, formulario_html: str = "") -> str:
                       font-style:italic;">{obs}</div>
         </td></tr>"""
 
+    wellbeing_html = bloco_wellbeing_html(bem_estar) if bem_estar else ""
+
     form_html = ""
     if formulario_html:
         form_html = f'<tr><td style="padding:26px 44px 0 44px;">{formulario_html}</td></tr>'
@@ -149,6 +209,8 @@ def montar_email(briefing_estruturado: dict, formulario_html: str = "") -> str:
     {secoes_html}
 
     {_acao_destaque(acao)}
+
+    {wellbeing_html}
 
     {obs_html}
 

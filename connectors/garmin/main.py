@@ -136,7 +136,7 @@ def rodar_para_atleta(atleta: dict, hoje: date):
         html_extra = formulario_html() if eh_domingo(hoje) else ""
         modo = "[!] " if sinais.get("houve_mudanca_relevante") or nao_resposta.get("relevante") else ""
         assunto = f"{modo}Briefing Fisiológico — {hoje.strftime('%d/%m/%Y')}"
-        enviar_email(assunto, briefing, html_extra)
+        enviar_email(assunto, briefing, html_extra, bem_estar)
         print(f"Email enviado para {atleta['email']}")
     except Exception as e:
         print(f"Erro no email: {e}")
