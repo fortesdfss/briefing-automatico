@@ -22,32 +22,45 @@ CAMPOS_VALIDOS = {
     "motivacao": (1, 5),
 }
 
+# Aliases para nomes alternativos usados no email
+ALIASES = {
+    "sono": "sono_qualidade",
+    "dor_muscular": "dores_musculares",
+    "dor": "dores_musculares",
+}
+
 
 def parse_titulo(titulo: str):
-    """'wellbeing:fadiga=3' -> ('fadiga', 3). Retorna None se inválido."""
+    """Aceita um ou múltiplos pares campo=valor separados por vírgula.
+    Retorna dict com os campos válidos, ou None se nenhum for reconhecido."""
     titulo = titulo.strip()
     if not titulo.lower().startswith("wellbeing:"):
         return None
     corpo = titulo.split(":", 1)[1]
-    if "=" not in corpo:
-        return None
-    campo, valor = corpo.split("=", 1)
-    campo = campo.strip()
-    valor = valor.strip()
-    if campo not in CAMPOS_VALIDOS:
-        return None
-    try:
-        valor_int = int(valor)
-    except ValueError:
-        return None
-    lo, hi = CAMPOS_VALIDOS[campo]
-    if not (lo <= valor_int <= hi):
-        return None
-    return campo, valor_int
+    resultado = {}
+    for par in corpo.split(","):
+        par = par.strip()
+        if "=" not in par:
+            continue
+        campo, valor = par.split("=", 1)
+        campo = campo.strip().lower()
+        valor = valor.strip()
+        campo = ALIASES.get(campo, campo)
+        if campo not in CAMPOS_VALIDOS:
+            continue
+        try:
+            valor_int = int(valor)
+        except ValueError:
+            continue
+        lo, hi = CAMPOS_VALIDOS[campo]
+        if not (lo <= valor_int <= hi):
+            continue
+        resultado[campo] = valor_int
+    return resultado if resultado else None
 
 
-def atualizar(campo: str, valor: int):
-    """Grava o campo no wellbeing.json. Reinicia se for de outro dia."""
+def atualizar(campos: dict):
+    """Grava os campos no wellbeing.json. Reinicia se for de outro dia."""
     hoje = date.today().isoformat()
     dados = {}
     if WELLBEING_FILE.exists():
@@ -57,16 +70,15 @@ def atualizar(campo: str, valor: int):
         except Exception:
             dados = {}
 
-    # Se o registro existente é de outro dia, começa um novo
     if dados.get("data") != hoje:
         dados = {"data": hoje}
 
-    dados[campo] = valor
+    dados.update(campos)
     dados["data"] = hoje
 
     with open(WELLBEING_FILE, "w", encoding="utf-8") as f:
         json.dump(dados, f, indent=2, ensure_ascii=False)
-    print(f"Wellbeing atualizado: {campo}={valor} (data {hoje})")
+    print(f"Wellbeing atualizado: {campos} (data {hoje})")
     return dados
 
 
@@ -81,5 +93,4 @@ if __name__ == "__main__":
         print(f"Título não reconhecido como wellbeing válido: '{titulo}'")
         sys.exit(0)  # sai sem erro para não falhar o workflow
 
-    campo, valor = resultado
-    atualizar(campo, valor)
+    atualizar(resultado)
