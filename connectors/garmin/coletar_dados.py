@@ -147,7 +147,7 @@ def coletar(hoje=None, client=None):
 
     # Sono (arquitetura + score)
     try:
-        sono = client.get_sleep_data(ontem_str)
+        sono = client.get_sleep_data(hoje_str)
         resumo = (sono or {}).get("dailySleepDTO") or {}
         dados["sono_total_min"] = (resumo.get("sleepTimeSeconds") or 0) // 60
         dados["sono_profundo_min"] = (resumo.get("deepSleepSeconds") or 0) // 60
