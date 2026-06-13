@@ -51,51 +51,23 @@ def eh_domingo(d: date = None) -> bool:
 def formulario_html(endpoint="https://briefing-automatico.vercel.app/api/wellbeing") -> str:
     """
     Gera o bloco HTML do formulário de wellbeing para o email de domingo.
-    Cada botão aponta para o endpoint Vercel que cria a issue via GitHub API
-    e retorna uma página de confirmação — sem precisar clicar em nada no GitHub.
+    Um único botão que abre a página de check-in completa no Vercel.
     """
-    def escala7(nome, label, descr_baixo, descr_alto):
-        botoes = ""
-        for v in range(1, 8):
-            url = f"{endpoint}?campo={nome}&valor={v}"
-            botoes += (
-                f'<a href="{url}" style="display:inline-block;width:34px;height:34px;'
-                f'line-height:34px;margin:2px;text-align:center;border:1px solid #ccc;'
-                f'border-radius:6px;text-decoration:none;color:#333;font-weight:600;">{v}</a>'
-            )
-        return (
-            f'<div style="margin:14px 0;">'
-            f'<div style="font-weight:600;margin-bottom:4px;">{label}</div>'
-            f'<div style="font-size:12px;color:#888;margin-bottom:6px;">1 = {descr_baixo} &nbsp;·&nbsp; 7 = {descr_alto}</div>'
-            f'{botoes}</div>'
-        )
-
-    def escala5(nome, label, descr_baixo, descr_alto):
-        botoes = ""
-        for v in range(1, 6):
-            url = f"{endpoint}?campo={nome}&valor={v}"
-            botoes += (
-                f'<a href="{url}" style="display:inline-block;width:34px;height:34px;'
-                f'line-height:34px;margin:2px;text-align:center;border:1px solid #ccc;'
-                f'border-radius:6px;text-decoration:none;color:#333;font-weight:600;">{v}</a>'
-            )
-        return (
-            f'<div style="margin:14px 0;">'
-            f'<div style="font-weight:600;margin-bottom:4px;">{label}</div>'
-            f'<div style="font-size:12px;color:#888;margin-bottom:6px;">1 = {descr_baixo} &nbsp;·&nbsp; 5 = {descr_alto}</div>'
-            f'{botoes}</div>'
-        )
-
     return (
-        '<div style="border:2px solid #222;border-radius:10px;padding:18px;margin-top:24px;font-family:Arial,sans-serif;">'
-        '<div style="font-size:16px;font-weight:700;margin-bottom:4px;">CHECK-IN SEMANAL DE WELLBEING</div>'
-        '<div style="font-size:13px;color:#666;margin-bottom:12px;">Escala Hooper-Mackinnon. Toque em um número por item — registra automaticamente.</div>'
-        + escala7("sono_qualidade", "Qualidade do sono na semana", "excelente", "péssima")
-        + escala7("fadiga", "Nível de fadiga geral", "muito baixa", "exausto")
-        + escala7("estresse", "Estresse de vida (trabalho/pessoal)", "muito baixo", "muito alto")
-        + escala7("dores_musculares", "Dores musculares (DOMS)", "nenhuma", "intensas")
-        + escala5("motivacao", "Motivação para treinar", "nenhuma", "altíssima")
-        + '</div>'
+        f'<div style="border:1px solid #e4e0d9;border-radius:4px;padding:26px 28px;margin-top:8px;">'
+        f'<div style="font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif;font-size:11px;'
+        f'letter-spacing:1.5px;text-transform:uppercase;color:#7a756e;font-weight:700;margin-bottom:10px;">'
+        f'Check-in Semanal de Wellbeing</div>'
+        f'<div style="font-family:\'Iowan Old Style\',Palatino,Georgia,serif;font-size:15px;'
+        f'color:#33312e;line-height:1.6;margin-bottom:18px;">'
+        f'Preencha o check-in semanal da escala Hooper-Mackinnon. Leva menos de 1 minuto.</div>'
+        f'<a href="{endpoint}" '
+        f'style="display:inline-block;background:#1a1a1a;color:#f7f5f1;padding:13px 28px;'
+        f'text-decoration:none;border-radius:4px;'
+        f'font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif;'
+        f'font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">'
+        f'Preencher check-in &rarr;</a>'
+        f'</div>'
     )
 
 
