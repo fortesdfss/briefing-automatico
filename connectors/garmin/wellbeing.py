@@ -48,21 +48,16 @@ def eh_domingo(d: date = None) -> bool:
     return (d or date.today()).weekday() == 6
 
 
-def formulario_html(repo="fortesdfss/briefing-automatico") -> str:
+def formulario_html(endpoint="https://briefing-automatico.vercel.app/api/wellbeing") -> str:
     """
     Gera o bloco HTML do formulário de wellbeing para o email de domingo.
-    Cada opção é um link que abre uma GitHub issue pré-preenchida (cru mas
-    funciona sem servidor) — o atleta clica, a issue registra a resposta,
-    e um workflow leve transcreve para wellbeing.json.
-    Alternativa simples: links mailto que o atleta responde.
+    Cada botão aponta para o endpoint Vercel que cria a issue via GitHub API
+    e retorna uma página de confirmação — sem precisar clicar em nada no GitHub.
     """
-    base = f"https://github.com/{repo}/issues/new"
-
     def escala7(nome, label, descr_baixo, descr_alto):
         botoes = ""
         for v in range(1, 8):
-            titulo = f"wellbeing:{nome}={v}"
-            url = f"{base}?title={titulo}&labels=wellbeing"
+            url = f"{endpoint}?campo={nome}&valor={v}"
             botoes += (
                 f'<a href="{url}" style="display:inline-block;width:34px;height:34px;'
                 f'line-height:34px;margin:2px;text-align:center;border:1px solid #ccc;'
@@ -78,8 +73,7 @@ def formulario_html(repo="fortesdfss/briefing-automatico") -> str:
     def escala5(nome, label, descr_baixo, descr_alto):
         botoes = ""
         for v in range(1, 6):
-            titulo = f"wellbeing:{nome}={v}"
-            url = f"{base}?title={titulo}&labels=wellbeing"
+            url = f"{endpoint}?campo={nome}&valor={v}"
             botoes += (
                 f'<a href="{url}" style="display:inline-block;width:34px;height:34px;'
                 f'line-height:34px;margin:2px;text-align:center;border:1px solid #ccc;'
