@@ -1,0 +1,128 @@
+{
+  "data": "2026-07-13",
+  "erros": [],
+  "hrv_rmssd_noturno": null,
+  "hrv_media_7d": null,
+  "hrv_status": null,
+  "hrv_baseline_baixo": null,
+  "hrv_baseline_alto": null,
+  "hrv_baseline_marker": null,
+  "hrv_desvio_baseline_pct": null,
+  "hrv_dispersao_noturna_ms": null,
+  "hrv_cv_noturno_pct": null,
+  "readiness_score": 42,
+  "readiness_nivel": "LOW",
+  "readiness_sono_fator": 0,
+  "readiness_recuperacao_fator": 72,
+  "readiness_hrv_fator": 0,
+  "readiness_carga_aguda_fator": null,
+  "stress_medio": 36,
+  "stress_max": 66,
+  "stress_repouso_pct": 0.55,
+  "stress_baixo_pct": 0.0,
+  "stress_medio_pct": 0.27,
+  "stress_alto_pct": 0.0,
+  "vo2max": null,
+  "passos": 104,
+  "calorias_ativas": 1.0,
+  "fc_repouso": null,
+  "sono_total_min": 0,
+  "sono_profundo_min": 0,
+  "sono_leve_min": 0,
+  "sono_rem_min": 0,
+  "sono_acordado_min": 0,
+  "sono_score": null,
+  "body_battery_max": 87,
+  "body_battery_min": 87,
+  "body_battery_atual": 87,
+  "peso_kg": null,
+  "previsao_corrida_5k": 1958,
+  "previsao_corrida_10k": 4352,
+  "previsao_corrida_meia": 10604,
+  "previsao_corrida_maratona": 25659,
+  "acwr": 1.72,
+  "carga_aguda_7d": 289.4,
+  "carga_cronica_28d": 168.4,
+  "_carga": {
+    "intencoes": [
+      "forca"
+    ],
+    "peso_carga_dia": 5,
+    "training_load_total": null,
+    "sRPE_foster_total": null,
+    "rpe_medio": null,
+    "feel_medio": null,
+    "n_atividades": 1,
+    "calorias_ativas": 1.0
+  },
+  "treino": {
+    "prescrito": null,
+    "atividades": [
+      {
+        "id": 23580047658,
+        "nome": "Força",
+        "tipo": "strength_training",
+        "familia": "forca",
+        "duracao_min": 66.5,
+        "distancia_km": null,
+        "fc_media": 97.0,
+        "fc_max": null,
+        "calorias": 364.0,
+        "rpe_borg": null,
+        "feel": null,
+        "training_load": null,
+        "training_effect": null,
+        "training_effect_label": null,
+        "body_battery_impact": null,
+        "sRPE_foster": null,
+        "repeticoes_totais": null,
+        "series_totais": null,
+        "pace_medio_s_km": null,
+        "exercicios": {
+          "activityId": 23580047658,
+          "exerciseSets": [
+            {
+              "exercises": [
+                {
+                  "category": "PULL_UP",
+                  "name": null,
+                  "probability": 50.78125
+                },
+                {
+                  "category": "PULL_UP",
+                  "name": "LAT_PULLDOWN",
+                  "probability": 30.078125
+                },
+                {
+                  "category": "HIP_RAISE",
+                  "name": "BARBELL_HIP_THRUST_ON_FLOOR",
+                  "probability": 18.359375
+                }
+              ],
+              "duration": 3990.173,
+              "repetitionCount": 10,
+              "weight": null,
+              "setType": "ACTIVE",
+              "startTime": "2026-07-13T09:20:00.0",
+              "wktStepIndex": null,
+              "messageIndex": 0
+            }
+          ]
+        },
+        "temperatura_c": null,
+        "umidade_pct": null,
+        "_intencao": {
+          "intencao_inferida": "forca",
+          "justificativa": "sessão de força (estímulo neuromuscular, não aeróbio)",
+          "fracao_alta_intensidade": 0.0,
+          "duracao_min": 66.5
+        }
+      }
+    ],
+    "erros": [],
+    "n_atividades": 1,
+    "modalidades_do_dia": [
+      "forca"
+    ]
+  }
+}
