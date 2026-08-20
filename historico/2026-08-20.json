@@ -1,0 +1,135 @@
+{
+  "data": "2026-08-20",
+  "erros": [],
+  "hrv_rmssd_noturno": null,
+  "hrv_media_7d": null,
+  "hrv_status": null,
+  "hrv_baseline_baixo": null,
+  "hrv_baseline_alto": null,
+  "hrv_baseline_marker": null,
+  "hrv_desvio_baseline_pct": null,
+  "hrv_dispersao_noturna_ms": null,
+  "hrv_cv_noturno_pct": null,
+  "readiness_score": 50,
+  "readiness_nivel": "MODERATE",
+  "readiness_sono_fator": 0,
+  "readiness_recuperacao_fator": 49,
+  "readiness_hrv_fator": 0,
+  "readiness_carga_aguda_fator": null,
+  "stress_medio": -1,
+  "stress_max": null,
+  "stress_repouso_pct": 0.0,
+  "stress_baixo_pct": 0.0,
+  "stress_medio_pct": 0.0,
+  "stress_alto_pct": 0.0,
+  "vo2max": null,
+  "passos": 82,
+  "calorias_ativas": 1.0,
+  "fc_repouso": null,
+  "sono_total_min": 0,
+  "sono_profundo_min": 0,
+  "sono_leve_min": 0,
+  "sono_rem_min": 0,
+  "sono_acordado_min": 0,
+  "sono_score": null,
+  "body_battery_max": 81,
+  "body_battery_min": 81,
+  "body_battery_atual": 81,
+  "peso_kg": null,
+  "previsao_corrida_5k": 2049,
+  "previsao_corrida_10k": 4554,
+  "previsao_corrida_meia": 11155,
+  "previsao_corrida_maratona": 26415,
+  "acwr": 1.62,
+  "carga_aguda_7d": 132.3,
+  "carga_cronica_28d": 81.8,
+  "_carga": {
+    "intencoes": [
+      "moderado_limiar"
+    ],
+    "peso_carga_dia": 6,
+    "training_load_total": null,
+    "sRPE_foster_total": null,
+    "rpe_medio": null,
+    "feel_medio": null,
+    "n_atividades": 1,
+    "calorias_ativas": 1.0
+  },
+  "treino": {
+    "prescrito": null,
+    "atividades": [
+      {
+        "id": 24047867182,
+        "nome": "Base",
+        "tipo": "treadmill_running",
+        "familia": "corrida",
+        "duracao_min": 36.3,
+        "distancia_km": 3.49,
+        "fc_media": 142.0,
+        "fc_max": null,
+        "calorias": 400.0,
+        "rpe_borg": null,
+        "feel": null,
+        "training_load": null,
+        "training_effect": null,
+        "training_effect_label": null,
+        "body_battery_impact": null,
+        "sRPE_foster": null,
+        "tempo_por_zona_s": {
+          "Z1": 142,
+          "Z2": 460,
+          "Z3": 1270,
+          "Z4": 282,
+          "Z5": 0
+        },
+        "pace_medio_s_km": null,
+        "elevacao_ganho_m": null,
+        "cadencia_media": null,
+        "splits": [
+          {
+            "n": 1,
+            "dist_m": 1000,
+            "fc_media": 135.0,
+            "pace_s_km": 488
+          },
+          {
+            "n": 2,
+            "dist_m": 1000,
+            "fc_media": 153.0,
+            "pace_s_km": 462
+          },
+          {
+            "n": 3,
+            "dist_m": 921,
+            "fc_media": 154.0,
+            "pace_s_km": 467
+          },
+          {
+            "n": 4,
+            "dist_m": 566,
+            "fc_media": 134.0,
+            "pace_s_km": 1414
+          }
+        ],
+        "deriva": {
+          "fc_primeira_metade": 144,
+          "fc_segunda_metade": 144,
+          "deriva_cardiaca_pct": 0.0
+        },
+        "temperatura_c": null,
+        "umidade_pct": null,
+        "_intencao": {
+          "intencao_inferida": "moderado_limiar",
+          "justificativa": "presença relevante de Z4-Z5 (13%) sugere trabalho de limiar/tempo",
+          "fracao_alta_intensidade": 0.13,
+          "duracao_min": 36.3
+        }
+      }
+    ],
+    "erros": [],
+    "n_atividades": 1,
+    "modalidades_do_dia": [
+      "corrida"
+    ]
+  }
+}
